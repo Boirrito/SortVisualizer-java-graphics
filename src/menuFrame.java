@@ -16,10 +16,6 @@ public class menuFrame extends JFrame implements ActionListener {
     JTextField arrLengthField;
     JLabel arraySizeLabel;
 
-    JButton size10Button;
-    JButton size50Button;
-    JButton size100Button;
-
     JPanel normalRadioButtonPanel;
     JRadioButton bubbleSortButton;
     JRadioButton selectionSortButton;
@@ -57,22 +53,12 @@ public class menuFrame extends JFrame implements ActionListener {
         arraySizeLabel = new JLabel("Array Size");
         top.add(arrLengthField);
         top.add(arraySizeLabel);
-
-
-        size10Button = new JButton("10");
-        size50Button = new JButton("50");
-        size100Button = new JButton("100");
-        size10Button.addActionListener(this);
-        size50Button.addActionListener(this);
-        size100Button.addActionListener(this);
-
-
-
         
         arraySizePanel.add(top);
-        arraySizePanel.add(size10Button);
-        arraySizePanel.add(size50Button);
-        arraySizePanel.add(size100Button);
+        // Add array size buttons
+        arraySizePanel.add(this.createArraySizeBtn(10));
+        arraySizePanel.add(this.createArraySizeBtn(50));
+        arraySizePanel.add(this.createArraySizeBtn(100));
 
         c.gridx = 0;
         c.gridy = 1;
@@ -110,6 +96,8 @@ public class menuFrame extends JFrame implements ActionListener {
         normalRadioButtonPanel.setLayout(new FlowLayout());
         normalRadioButtonPanel.setBorder(new TitledBorder("Standard"));
         bubbleSortButton = new JRadioButton("Bubble Sort");
+        // Set bubble sort as default active algorithm
+        bubbleSortButton.setSelected(true);
         selectionSortButton = new JRadioButton("Selction Sort");
         insertionSortButton = new JRadioButton("Insertion Sort");
         quickSortButton = new JRadioButton("Quick Sort");
@@ -138,21 +126,28 @@ public class menuFrame extends JFrame implements ActionListener {
         pack();
     }
 
+    /**
+     * Creates a Button which, when clicked, updates the array to the given size.
+     * @param size Size which will be applied to arrLengthField
+     * @return Button instance
+     */
+    private JButton createArraySizeBtn(int size) {
+        String sizeText = Integer.valueOf(size).toString();
+        JButton btn = new JButton(sizeText);
+
+        btn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                // On click, update array length
+                arrLengthField.setText(sizeText);
+            }
+        });
+
+        return btn;
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == size10Button) {
-            arrLengthField.setText("10");
-
-        }
-
-        if (e.getSource() == size50Button) {
-            arrLengthField.setText("50");
-        }
-
-        if (e.getSource() == size100Button) {
-            arrLengthField.setText("100");
-        }
 
         if (e.getSource() == bubbleSortButton) {
             selectionSortButton.setSelected(false);
