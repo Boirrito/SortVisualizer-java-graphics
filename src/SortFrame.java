@@ -324,7 +324,7 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
 
     public void playSwitchSound() {
 
-        File sound = new File("C:/Users/Leon/eclipse-workspace/SortVisualizer/src/switch.wav");
+        File sound = new File("./src/switch.wav");
 
         try {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(sound);
