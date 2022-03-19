@@ -1,5 +1,5 @@
 # Compiled class file
-bin/*.class
+*.class
 
 # Log file
 *.log

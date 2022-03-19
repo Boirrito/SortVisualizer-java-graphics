@@ -12,6 +12,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.awt.event.ActionEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
@@ -167,7 +168,9 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
 
         if (e.getSource() == playButton) {
 
-            System.out.println("playButton Pressed");
+            Integer delay = Integer.parseInt(delayField.getText()) * 10;
+            System.out.println(String.format("playButton Pressed"));
+
 
             timer = new Timer();
             timer.scheduleAtFixedRate(new TimerTask() {
@@ -177,7 +180,7 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
                     displayNewFrame();
                 }
 
-            }, 1000, Integer.parseInt(delayField.getText()) * 10);
+            }, 1000, delay);
 
         }
 
@@ -324,23 +327,20 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
 
     public void playSwitchSound() {
 
-        File sound = new File("./src/switch.wav");
+        Path p = Path.of("./src/switch.wav");
+        File sound = new File(p.toString());
 
         try {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(sound);
             Clip clip = AudioSystem.getClip();
             clip.open(audioStream);
-
             clip.start();
-
         } catch (UnsupportedAudioFileException e) {
-
             e.printStackTrace();
         } catch (IOException e) {
-
+            System.err.println(String.format("Couldnt find file '%s'", p.toString()));
             e.printStackTrace();
         } catch (LineUnavailableException e) {
-
             e.printStackTrace();
         }
 
