@@ -1,53 +1,55 @@
 import javax.swing.JFrame;
 import javax.swing.event.ChangeEvent;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
+
+import algorithms.BubbleSort;
+import algorithms.InsertionSort;
+import algorithms.SelectionSort;
+import algorithms.SortAlgorithm;
+import algorithms.SortCallback;
 
 import java.awt.*;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.awt.event.ActionEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 
 import javax.sound.sampled.*;
 
 import javax.swing.*;
 
-public class SortFrame extends JFrame implements ActionListener, ChangeListener {
+public class SortFrame extends JFrame {
 
     JPanel drawPanel;
     JPanel buttonPanelLeft;
     JPanel statsPanelTop;
     GridBagConstraints c;
 
-    JTextField delayField;
+    JTextField txtTickInterval;
 
-    JButton nextFrameButton;
-    JButton lastFrameButton;
-    JButton endButton;
-    JButton playButton;
-    JLabel playLabel;
-    JLabel frameLabel;
-    JSlider delaySlider;
+    JButton btnNextFrame;
+    JButton btnPreviousFrame;
+    JButton btnQuit;
+    JButton btnStartSort;
+    JLabel lblTickInterval;
+    JLabel lblCurrFrame;
+    JSlider sldTickInterval;
 
     Timer timer;
 
     //Frame stats
     int maxFrames;
-    int currFrame;
+    int currFrame = 0;
 
     int[] array;
 
-    ArrayList<int[]> steps;
-    ArrayList<int[]> highlights;
+    ArrayList<int[]> steps = new ArrayList<>();
+    ArrayList<int[]> highlights = new ArrayList<>();
 
     public SortFrame(int arraySize, String algo) {
 
@@ -69,17 +71,32 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
         add(drawPanel, BorderLayout.CENTER);
         setVisible(true);
 
+        SortAlgorithm _algo = null;
+
         if (algo.equals("bubble")) {
-            bubblesort(array);
+            _algo = new BubbleSort();
         }
 
         if (algo.equals("selection")) {
-            selectionsort(array);
+            _algo = new SelectionSort();
         }
 
         if (algo.equals("insertion")){
-            insertionSort(array);
+            _algo = new InsertionSort();
         }
+
+        if (_algo != null) {
+            _algo.sort(array, new SortCallback(){
+                @Override
+                public void update(int[] _highlights, int[] _steps) {
+                    highlights.add(_highlights);
+                    steps.add(_steps);                    
+                }
+            });
+        } else {
+            System.err.println(String.format("No or invalid algorithm '%s'", algo));
+        }
+
 
         buttonPanelLeft = new JPanel();
         this.add(buttonPanelLeft, BorderLayout.WEST);
@@ -87,223 +104,136 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
         buttonPanelLeft.setLayout(new GridBagLayout());
         c = new GridBagConstraints();
 
-        nextFrameButton = new JButton("next Frame");
-        lastFrameButton = new JButton("prev Frame");
-        endButton = new JButton("end");
-        playButton = new JButton("play");
-
-        playLabel = new JLabel("delay in seconds");
-        frameLabel = new JLabel();
-
-        delayField = new JTextField(5);
-        delayField.setText("2");
-
-        delaySlider = new JSlider(0, 5, 2);
-        delaySlider.setPaintTicks(true);
-        delaySlider.setMajorTickSpacing(1);
-        delaySlider.setPaintLabels(true);
-        delaySlider.addChangeListener(this);
-
-        endButton.addActionListener(this);
-        nextFrameButton.addActionListener(this);
-        playButton.addActionListener(this);
-
-        // c.ipadx = 2;
         c.gridx = 0;
         c.gridy = 0;
-        c.gridwidth = 1;
-        buttonPanelLeft.add(nextFrameButton, c);
 
-        c.gridy = 1;
-        buttonPanelLeft.add(lastFrameButton, c);
-
+        // Quit button
+        btnQuit = new JButton("end");
+        btnQuit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (timer != null) {
+                    timer.cancel();
+                }
+                dispose();
+            }
+        });
         c.gridy = 2;
-        buttonPanelLeft.add(endButton, c);
+        buttonPanelLeft.add(btnQuit, c);
 
-        c.gridy = 3;
-        buttonPanelLeft.add(playLabel, c);
+        // Next frame button
+        btnNextFrame = new JButton("next Frame");
+        btnNextFrame.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                displayNewFrame();
+            }
+        });
+        c.gridwidth = 1;
+        buttonPanelLeft.add(btnNextFrame, c);
 
-        c.gridy = 4;
-        buttonPanelLeft.add(delaySlider, c);
+        // Previous frame button
+        btnPreviousFrame = new JButton("prev Frame");
+        btnPreviousFrame.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                throw new Error("missing implementation!");
+            }
+        });
+        c.gridy = 1;
+        buttonPanelLeft.add(btnPreviousFrame, c);
 
-        c.gridy = 5;
-        buttonPanelLeft.add(delayField, c);
-
+        // Start button
+        btnStartSort = new JButton("Start");
+        btnStartSort.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Integer delay = Integer.parseInt(txtTickInterval.getText());  
+    
+                timer = new Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+    
+                    @Override
+                    public void run() {
+                        displayNewFrame();
+                        // After finishing all stepst, cancel timer
+                        if (currFrame == steps.size()) {
+                            this.cancel();
+                        }
+                    }
+    
+                }, 500, delay);
+            }
+        });
         c.gridx = 0;
         c.gridy = 6;
-        buttonPanelLeft.add(playButton, c);
+        buttonPanelLeft.add(btnStartSort, c);
 
+        // Tick interval slider + label
+
+        int defaultTick = 500;
+
+        lblTickInterval = new JLabel("Tick interval in ms");
+        c.gridy = 3;
+        buttonPanelLeft.add(lblTickInterval, c);
+        // Textbox to input an interval
+        txtTickInterval = new JTextField(5);
+        txtTickInterval.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int ms = Integer.parseInt(((JTextField)e.getSource()).getText());
+                setTickInterval(ms);
+            }
+        });
+        c.gridy = 5;
+        buttonPanelLeft.add(txtTickInterval, c);
+        
+
+        sldTickInterval = new JSlider(10, 2000, defaultTick);
+        sldTickInterval.setPaintTicks(true);
+        sldTickInterval.setMajorTickSpacing(1);
+        sldTickInterval.setPaintLabels(true);
+
+        sldTickInterval.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                // On changes update tick interval
+                int value = ((JSlider) e.getSource()).getValue();
+                setTickInterval(value);
+            }
+        });
+
+        c.gridy = 4;
+        buttonPanelLeft.add(sldTickInterval, c);
+
+
+        // Current frame
+        lblCurrFrame = new JLabel();
         c.gridx = 0;
         c.gridy = 7;
-        buttonPanelLeft.add(frameLabel, c);
+        buttonPanelLeft.add(lblCurrFrame, c);
+
 
         statsPanelTop = new JPanel();
         add(statsPanelTop, BorderLayout.NORTH);
         
-       
-
-
         setSize(1000, 700);
 
+        setTickInterval(defaultTick);
     }
 
-    int counter = 0;
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == endButton) {
-
-            if (timer != null) {
-                timer.cancel();
-            }
-            dispose();
-        }
-
-        if (e.getSource() == nextFrameButton) {
-
-            displayNewFrame();
-
-        }
-
-        if (e.getSource() == playButton) {
-
-            Integer delay = Integer.parseInt(delayField.getText()) * 10;
-            System.out.println(String.format("playButton Pressed"));
-
-
-            timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-
-                @Override
-                public void run() {
-                    displayNewFrame();
-                }
-
-            }, 1000, delay);
-
-        }
-
-    }
-
-    @Override
-    public void stateChanged(ChangeEvent e) {
-
-        if (e.getSource() == delaySlider) {
-            delayField.setText(Integer.toString(delaySlider.getValue()));
-        }
-
-    }
-
-    private void selectionsort(int[] arr) {
-
-        steps = new ArrayList<int[]>();
-        highlights = new ArrayList<int[]>();
-
-        int n = arr.length;
-
-        for (int i = 0; i < n-1; i++)
-        {
-            int min_idx = i;
-            for (int j = i+1; j < n; j++){
-                if (arr[j] < arr[min_idx]){
-                   min_idx = j;
-                  // highlights.add(new int[]{j});
-                    }
-                }
-                   
-
-            int temp = arr[min_idx];
-            arr[min_idx] = arr[i];
-            arr[i] = temp;
-            int[] stepArray = arr.clone();
-            highlights.add(new int[]{i});
-            steps.add(stepArray);
-            
-
-        }
-
-    }
-
-    private void bubblesort(int[] arrayto) {
-
-        int[] tempArray = new int[arrayto.length];
-
-        for (int c = 0; c < tempArray.length; c++) {
-            tempArray[c] = arrayto[c];
-        }
-
-        steps = new ArrayList<>();
-        highlights = new ArrayList<>();
-
-      
-
-        int n = tempArray.length;
-        int temp = 0;
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 1; j < (n - i); j++) {
-                if (tempArray[j - 1] > tempArray[j]) {
-                    // swap elements
-                    temp = tempArray[j - 1];
-                    tempArray[j - 1] = tempArray[j];
-                    tempArray[j] = temp;
-
-                    int[] stepArray = new int[tempArray.length];
-
-                    for (int b = 0; b < tempArray.length; b++) {
-                        stepArray[b] = tempArray[b];
-                    }
-                    highlights.add(new int[]{j});
-                    steps.add(stepArray);
-
-                    /*
-                     * System.out.println(Arrays.toString(tempArray));
-                     * steps.add(tempArray);
-                     * System.out.println(steps.toString());
-                     */
-
-                }
-
-            }
-        }
-
-       
-    }
-
-    public void insertionSort(int[] arr){
-
-        System.out.println(Arrays.toString(arr));
-
-        steps = new ArrayList<>();
-        highlights = new ArrayList<>();
-        
-       int n = arr.length;
-       for(int i = 1; i < n; ++i){
-           int key = arr[i];
-           int j = i - 1;
-
-           while(j >= 0 && arr[j] > key){
-               arr[j + 1] = arr[j];
-               j = j-1;
-               
-           }
-           arr[j+1] = key;
-           highlights.add(new int[]{j});
-           steps.add(arr.clone());
-           
-       }
-       
-
+    private void setTickInterval(Integer ms) {
+        txtTickInterval.setText(ms.toString());
+        sldTickInterval.setValue(ms);
     }
 
 
     public void displayNewFrame() {
-        if (counter < steps.size()) {
-            int[] frame = steps.get(counter);
-            int[] highlight = highlights.get(counter);
+        if (currFrame < steps.size()) {
+            int[] frame = steps.get(currFrame);
+            int[] highlight = highlights.get(currFrame);
 
-            frameLabel.setText("Frame " + (counter+1) + " / " + steps.size());
+            lblCurrFrame.setText(String.format("Frame %d / %d", currFrame+1,steps.size()));
 
             // playSwitchSound();
 
@@ -315,17 +245,11 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
             this.add(drawPanel, BorderLayout.CENTER);
             setVisible(true);
             repaint();
-            counter++;
-
-            if (counter == steps.size()) {
-                if (timer != null) {
-                    timer.cancel();
-                }
-            }
+            currFrame++;
         }
     }
 
-    public void playSwitchSound() {
+    private void playSwitchSound() {
 
         Path p = Path.of("./src/switch.wav");
         File sound = new File(p.toString());
@@ -346,7 +270,7 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
 
     }
 
-    public int[] generateArray(int arraySize) {
+    private int[] generateArray(int arraySize) {
 
         int[] temp = new int[arraySize];
 
@@ -366,7 +290,6 @@ public class SortFrame extends JFrame implements ActionListener, ChangeListener 
             temp[x] = n;
         }
 
-        System.out.println(Arrays.toString(temp));
         return temp;
 
     }

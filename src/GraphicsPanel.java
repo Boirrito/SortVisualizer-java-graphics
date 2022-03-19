@@ -57,7 +57,8 @@ public class GraphicsPanel extends JPanel {
         g2d.setColor(Color.black);
         g2d.fill(background);
 
-        System.out.println("drawing: " + Arrays.toString(arrayl));
+        // System.out.println("drawing: " + Arrays.toString(arrayl));
+        
 
         for (int i = 0; i < arrayl.length; i++) {
             /*
