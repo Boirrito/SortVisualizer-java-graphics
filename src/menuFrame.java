@@ -48,7 +48,8 @@ public class menuFrame extends JFrame implements ActionListener {
 
         
         arrLengthField = new JTextField();
-        arrLengthField.setText("10");
+        // Use default length of 10
+        setArrayLength("10");
         arrLengthField.setSize(100, 100);
         arraySizeLabel = new JLabel("Array Size");
         top.add(arrLengthField);
@@ -139,11 +140,15 @@ public class menuFrame extends JFrame implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent arg0) {
                 // On click, update array length
-                arrLengthField.setText(sizeText);
+                setArrayLength(sizeText);
             }
         });
 
         return btn;
+    }
+
+    private void setArrayLength(String len) {
+        arrLengthField.setText(len);
     }
 
     @Override
