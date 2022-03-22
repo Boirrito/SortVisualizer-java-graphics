@@ -18,31 +18,8 @@ public class AudioPlayer {
     private final Path _filePath = Paths.get("").resolve("assets/sounds/switch.wav");
     private Clip audioClip = null;
     private AudioInputStream audioStream;
-    
-    private void open(String path) {
-        File sound = new File(path);
-        try {
-            setAudioStream(AudioSystem.getAudioInputStream(sound));
-            setAudioClip(AudioSystem.getClip());
-            getAudioClip().open(getAudioStream());
-        } catch (UnsupportedAudioFileException e) {
-            System.err.println(String.format("Unsupported file format '%s'", path));
-        }
-        catch (LineUnavailableException e) {
-            System.err.println(String.format("Line unavailable '%s'", path));
-        }
-        catch (IOException e) {
-            System.err.println(String.format("Couldnt find file '%s'", path));
-        } catch (Exception e) {
-            System.err.println(String.format("Unknown exception occured '%s'", path));
-            e.printStackTrace();
-        }
-    }
 
     public AudioPlayer() {
-        
-        open(getFilePath());
-
     }
 
     private void setAudioStream(AudioInputStream as) {
@@ -94,7 +71,7 @@ public class AudioPlayer {
         // float newSampleRate = (sampleRate / 100) * (pitch * 100);
         float newSampleRate = sampleRate * pitch;
         
-        System.out.println(String.format("New sample new rate: %f rate %f pitch %f size %d frameRate %f", newSampleRate, sampleRate, pitch, sampleSize, frameRate));
+        // System.out.println(String.format("New sample new rate: %f rate %f pitch %f size %d frameRate %f", newSampleRate, sampleRate, pitch, sampleSize, frameRate));
         // Fallback to original format
         AudioFormat ret = getAudioStream().getFormat();
         try {
@@ -112,19 +89,20 @@ public class AudioPlayer {
     }
 
     public void play(float pitch) {
-        System.out.println(String.format("Sound! %f", pitch));
+        // System.out.println(String.format("Sound! %f", pitch));
 
         String path = getFilePath();
 
         File sound = new File(path);
         try {
-            getAudioClip().stop();
-            getAudioClip().setMicrosecondPosition(0);
+            // getAudioClip().stop();
+            // getAudioClip().setMicrosecondPosition(0);
             setAudioStream(AudioSystem.getAudioInputStream(sound));
-            AudioFormat pitched = pitchSound(getAudioStream().getFormat(), pitch);
-            AudioInputStream pitchedStream = AudioSystem.getAudioInputStream(pitched, getAudioStream());
+            // AudioFormat pitched = pitchSound(getAudioStream().getFormat(), pitch);
+            // AudioInputStream pitchedStream = AudioSystem.getAudioInputStream(pitched, getAudioStream());
             setAudioClip(AudioSystem.getClip());
-            getAudioClip().open(pitchedStream);
+            // getAudioClip().open(pitchedStream);
+            getAudioClip().open(getAudioStream());
             getAudioClip().start();
         } catch (UnsupportedAudioFileException e) {
             System.err.println(String.format("Unsupported file format '%s'", path));
@@ -138,18 +116,5 @@ public class AudioPlayer {
             System.err.println(String.format("Unknown exception occured '%s'", path));
             e.printStackTrace();
         }
-
-        // try {
-            // getAudioClip().stop();
-            // getAudioClip().setMicrosecondPosition(0);
-            // getAudioClip().close();
-            // AudioFormat pitched = pitchSound(getAudioStream().getFormat(), pitch);
-            // AudioInputStream pitchedStream = AudioSystem.getAudioInputStream(pitched, getAudioStream());
-            // setAudioClip(AudioSystem.getClip());
-            // getAudioClip().open(getAudioStream());
-            // getAudioClip().start();
-        // } catch (LineUnavailableException | IOException e) {
-        //     e.printStackTrace();
-        // }
     }
 }
