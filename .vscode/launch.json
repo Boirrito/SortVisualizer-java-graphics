@@ -16,6 +16,14 @@
             "request": "launch",
             "mainClass": "Frame",
             "projectName": "SortVisualizer-java-graphics_55456846"
+        },
+        {
+            "type": "java",
+            "name": "Launch Java Program",
+            "request": "launch",
+            "mainClass": "Frame",
+            "projectName": "SortVisualizer-java-graphics"
+
         }
     ]
 }

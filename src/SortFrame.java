@@ -6,6 +6,7 @@ import algorithms.InsertionSort;
 import algorithms.SelectionSort;
 import algorithms.SortAlgorithm;
 import algorithms.SortCallback;
+import sound.AudioPlayer;
 
 import java.awt.*;
 import java.util.Timer;
@@ -13,17 +14,14 @@ import java.util.TimerTask;
 import java.util.ArrayList;
 import java.util.Random;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.awt.event.ActionEvent;
 import javax.swing.event.ChangeListener;
-
-import javax.sound.sampled.*;
 
 import javax.swing.*;
 
 public class SortFrame extends JFrame {
+
+    private AudioPlayer ap = new AudioPlayer();
 
     JPanel drawPanel;
     JPanel buttonPanelLeft;
@@ -148,21 +146,7 @@ public class SortFrame extends JFrame {
         btnStartSort.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                Integer delay = Integer.parseInt(txtTickInterval.getText());  
-    
-                timer = new Timer();
-                timer.scheduleAtFixedRate(new TimerTask() {
-    
-                    @Override
-                    public void run() {
-                        displayNewFrame();
-                        // After finishing all stepst, cancel timer
-                        if (currFrame == steps.size()) {
-                            this.cancel();
-                        }
-                    }
-    
-                }, 500, delay);
+                startTimer();
             }
         });
         c.gridx = 0;
@@ -225,17 +209,55 @@ public class SortFrame extends JFrame {
     private void setTickInterval(Integer ms) {
         txtTickInterval.setText(ms.toString());
         sldTickInterval.setValue(ms);
+
+        // If tick value is changed while timer is running,
+        // Update the timer with the new tick interval
+        if (timer != null) {
+            restartTimer();
+        } 
     }
 
+    private void startTimer() {
+        Integer delay = Integer.parseInt(txtTickInterval.getText());  
+    
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+
+            @Override
+            public void run() {
+                displayNewFrame();
+                // After finishing all stepst, cancel timer
+                if (currFrame == steps.size()) {
+                    this.cancel();
+                }
+            }
+
+        }, 500, delay);
+    }
+
+    private void stopTimer() {
+        this.timer.cancel();
+        this.timer = null;
+    }
+
+    private void restartTimer() {
+        this.stopTimer();
+        this.startTimer();
+    }
 
     public void displayNewFrame() {
-        if (currFrame < steps.size()) {
+        int size = steps.size();
+        if (currFrame < size) {
             int[] frame = steps.get(currFrame);
             int[] highlight = highlights.get(currFrame);
 
-            lblCurrFrame.setText(String.format("Frame %d / %d", currFrame+1,steps.size()));
-
-            // playSwitchSound();
+            lblCurrFrame.setText(String.format("Frame %d / %d", currFrame+1,size));
+            
+            float progressPercentage = ( 1f / size ) * currFrame;
+            System.out.println(String.format("progressPercentage! %f frame %d size %d", progressPercentage, currFrame, size));
+            
+            // Play a sound
+            ap.play(progressPercentage);
 
             // System.out.println("nextFrame pressed");
 
@@ -247,27 +269,6 @@ public class SortFrame extends JFrame {
             repaint();
             currFrame++;
         }
-    }
-
-    private void playSwitchSound() {
-
-        Path p = Path.of("./src/switch.wav");
-        File sound = new File(p.toString());
-
-        try {
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(sound);
-            Clip clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            clip.start();
-        } catch (UnsupportedAudioFileException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.err.println(String.format("Couldnt find file '%s'", p.toString()));
-            e.printStackTrace();
-        } catch (LineUnavailableException e) {
-            e.printStackTrace();
-        }
-
     }
 
     private int[] generateArray(int arraySize) {
